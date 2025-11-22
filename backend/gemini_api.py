@@ -5,6 +5,10 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
+from prompt_builder import build_prompt
+from preferences import load_preferences
+from exercises import PRESET_EXERCISES
+
 load_dotenv()
 
 def generate():
@@ -15,15 +19,21 @@ def generate():
     client = genai.Client(api_key=api_key)
 
     model = "gemini-2.5-flash"
+
+    user_prefs = load_preferences()
+    preset_exercises = PRESET_EXERCISES
+
+    prompt_text = build_prompt(user_prefs, preset_exercises)
+
     contents = [
         types.Content(
             role="user",
             parts=[
-                types.Part.from_text(text="""What's today's date?"""),
+                types.Part.from_text(text=prompt_text),
             ],
         ),
     ]
-    # Use a plain dict for config to avoid invalid Python syntax and keep the example simple.
+    # Use a plain dict for config to avoid invalid Python syntax and keep the example simple
     generate_content_config = {
         # "thinkingConfig": {"thinkingLevel": "LOW"},
     }
