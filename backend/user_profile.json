@@ -1,0 +1,36 @@
+{
+    "accessibility": {
+      "textSize": "medium",
+      "colorBlindMode": "none",
+      "audioCues": true,
+      "motionSensitivity": false
+    },
+    "timer": {
+      "warmUpSeconds": 300,
+      "exerciseSeconds": 45,
+      "restSeconds": 15
+    },
+    "profile": {
+      "ageRange": "under-18",
+      "fitnessLevel": "beginner",
+      "healthConditions": [
+        "pregnancy"
+      ]
+    },
+    "preferences": {
+      "focus": [
+        "cardio",
+        "strength"
+      ],
+      "spaceAvailable": "medium",
+      "intensity": 4
+    },
+    "concerns": {
+      "limitations": [],
+      "equipment": [
+        "none",
+        "bands"
+      ]
+    }
+  }
+  
