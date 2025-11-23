@@ -1,6 +1,6 @@
 import json
 import os
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QCheckBox, QGroupBox, QScrollArea, QSlider, QSpinBox, QProgressBar,QGridLayout)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QCheckBox, QGroupBox, QScrollArea, QSlider, QSpinBox, QProgressBar,QGridLayout,QFrame,QTextEdit)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QColor, QPalette
 
@@ -834,6 +834,56 @@ class ConfigurationPage(QWidget):
         audio_widget.mousePressEvent = lambda event: toggle_switch.setChecked(not toggle_switch.isChecked())
         
         interaction_layout.addWidget(audio_widget)
+        
+        # Add separator line
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setStyleSheet("background: rgba(255, 255, 255, 0.2); margin: 10px 15px;")
+        interaction_layout.addWidget(separator)
+        
+        # Additional Notes Text Box
+        notes_widget = QWidget()
+        notes_layout = QVBoxLayout(notes_widget)
+        notes_layout.setContentsMargins(15, 0, 15, 12)
+        notes_layout.setSpacing(8)
+        
+        notes_title = QLabel("Additional Notes")
+        notes_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold; background: transparent;")
+        notes_layout.addWidget(notes_title)
+        
+        notes_desc = QLabel("Any special requirements or preferences")
+        notes_desc.setStyleSheet("color: rgba(255, 255, 255, 0.7); font-size: 14px; background: transparent;")
+        notes_layout.addWidget(notes_desc)
+        
+        # Text edit box
+        notes_textedit = QTextEdit()
+        notes_textedit.setMaximumHeight(100)
+        notes_textedit.setPlaceholderText("Type any additional accessibility requirements, preferences, or notes here...")
+        notes_textedit.setStyleSheet("""
+            QTextEdit {
+                background: rgba(255, 255, 255, 0.1);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                padding: 10px;
+                font-size: 14px;
+                selection-background-color: rgba(59, 130, 246, 0.5);
+            }
+            QTextEdit:focus {
+                border: 1px solid #3b82f6;
+            }
+        """)
+        
+        # Load existing notes
+        if 'accessibility_notes' in self.user_data:
+            notes_textedit.setText(self.user_data['accessibility_notes'])
+        
+        # Save notes when text changes
+        notes_textedit.textChanged.connect(lambda: self.update_user_data('accessibility_notes', notes_textedit.toPlainText()))
+        
+        notes_layout.addWidget(notes_textedit)
+        interaction_layout.addWidget(notes_widget)
+        
         interaction_group.setLayout(interaction_layout)
         
         center_layout.addWidget(interaction_group)
