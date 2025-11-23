@@ -3,10 +3,10 @@ import threading
 
 engine = pyttsx3.init()
 
-# Optional: set speaking rate (slower for clarity)
-engine.setProperty('rate', 170)
 
-# Optional: volume
+engine.setProperty('rate', 180)
+
+
 engine.setProperty('volume', 1.0)
 
 def _speak(text):

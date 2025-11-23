@@ -12,11 +12,11 @@ displayed_feedback = ""
 last_exercise_data = None
 feedback_lock = threading.Lock()  
 
-# --- Load user profile ---
+
 with open("user_profile.json") as f:
     user_profile = json.load(f)
 
-# --- Globals for audio ---
+#audio
 last_audio_time = 0
 last_spoken_text = ""  
 MIN_FEEDBACK_INTERVAL = 5.0
@@ -28,11 +28,12 @@ CHANGE_THRESHOLD = 8
 FRAMES_REQUIRED = 2.1
 STABILITY_WINDOW = 1.5 
 
-# --- Exercise info for description display ---
+
 EXERCISES_INFO = {
     "armsUp": "Arms Up:\nRaise both arms overhead until fully extended.\nKeep wrists above shoulders.",
     "squat": "Squat:\nLower your body by bending knees and hips.\nKeep your back straight and knees over toes.",
-    # Add more exercises later as needed
+    
+    
 }
 
 def feedback_worker(exerciseData):
@@ -58,7 +59,7 @@ and abs(float(prev[k]) - float(curr[k])) > CHANGE_THRESHOLD
         for k in curr
     )
 
-    # check boolean changes
+
     bool_change = any(
         isinstance(curr[k], bool) and prev.get(k) is not None and prev[k] != curr[k]
         for k in curr
@@ -109,10 +110,29 @@ stable_feedback = ""
 latest_feedback_candidate = ""
 last_change_time = time.time()
 
-# --- Show description at start ---
+
 description = EXERCISES_INFO.get(exercise_name, "")
 desc_start_time = time.time()
-DESC_DURATION = 4  # seconds
+DESC_DURATION = 4 
+def draw_wrapped_text(frame, text, x=30, y=120, dy=25, max_width=600, color=(0,255,0)):
+    """
+    Draws multi-line text on frame, wrapping long lines, using a single color.
+    """
+    for line in text.splitlines():
+        words = line.split(' ')
+        current_line = ''
+        for word in words:
+            test_line = current_line + (' ' if current_line else '') + word
+            (w, h), _ = cv2.getTextSize(test_line, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+            if w > max_width:
+                cv2.putText(frame, current_line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+                y += dy
+                current_line = word
+            else:
+                current_line = test_line
+        if current_line:
+            cv2.putText(frame, current_line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+            y += dy
 
 for frame, exerciseData in exercise_func():
     frame = cv2.flip(frame, 1)
@@ -141,10 +161,13 @@ for frame, exerciseData in exercise_func():
                     last_audio_time = now
 
 
-    y0, dy = 120, 25
-    for i, line in enumerate(stable_feedback.splitlines()):
-        cv2.putText(frame, line, (30, y0 + i*dy), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                    (0,255,0) if exerciseData['correct_form'] else (0,0,255), 2)
+
+    color = (255, 200, 0)
+
+
+    draw_wrapped_text(frame, stable_feedback, x=30, y=120, dy=25, max_width=600, color=color)
+
+
 
     cv2.imshow(f"{exercise_name} Exercise with Gemini Feedback", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
