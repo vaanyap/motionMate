@@ -59,7 +59,7 @@ class HomePage(QWidget):
         layout.setContentsMargins(50, 0, 50, 0)
         
         # Title
-        title = QLabel("MotionMimic+")
+        title = QLabel("MotionMate")
         title.setStyleSheet("""
             QLabel {
                 color: white;
