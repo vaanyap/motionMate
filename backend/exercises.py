@@ -4,27 +4,59 @@
 PRESET_EXERCISES = [
     {
         "id": "E1",
-        "name": "Seated Hamstring Stretch",
+        "name": "Arms Up Stretch",
         "category": "flexibility",
         "difficulty": "easy",
         "equipment": [],
-        "instructions": "Sit on the floor with legs extended and lean forward."
+        "instructions": "Stand tall, raise both arms overhead, and straighten them above your head."
     },
     {
         "id": "E2",
-        "name": "Wall Push-Up",
-        "category": "upper body strength",
-        "difficulty": "easy",
-        "equipment": ["wall"],
-        "instructions": "Stand arms-length from a wall and push your body away."
+        "name": "Bodyweight Squat",
+        "category": "lower body strength",
+        "difficulty": "medium",
+        "equipment": [],
+        "instructions": "Stand with feet shoulder-width apart and lower into a squat, keeping your back straight."
     },
     {
         "id": "E3",
-        "name": "Chair Squat",
-        "category": "lower body",
+        "name": "Forward Lunge",
+        "category": "lower body strength",
         "difficulty": "medium",
-        "equipment": ["chair"],
-        "instructions": "Stand and sit back down without using your hands."
+        "equipment": [],
+        "instructions": "Step forward with one foot, lower your body until both knees are bent, then push back to standing."
+    },
+    {
+        "id": "E4",
+        "name": "Plank",
+        "category": "core strength",
+        "difficulty": "medium",
+        "equipment": [],
+        "instructions": "Hold a straight-body position with your forearms and toes on the ground, keeping your core tight."
+    },
+    {
+        "id": "E5",
+        "name": "Toe Touch Stretch",
+        "category": "flexibility",
+        "difficulty": "easy",
+        "equipment": [],
+        "instructions": "Stand straight and bend forward at the hips to touch your toes while keeping your legs straight."
+    },
+    {
+        "id": "E6",
+        "name": "Cobra Stretch",
+        "category": "flexibility",
+        "difficulty": "easy",
+        "equipment": [],
+        "instructions": "Lie face down, place your palms under your shoulders on the ground, and lift your chest upward while keeping hips on the ground."
+    },
+    {
+        "id": "E7",
+        "name": "Tree Pose",
+        "category": "balance",
+        "difficulty": "medium",
+        "equipment": [],
+        "instructions": "Stand on one leg and place the other foot on your inner thigh or calf, bringing your hands together at your chest or overhead."
     }
 ]
 
