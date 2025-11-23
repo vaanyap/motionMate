@@ -13,7 +13,7 @@ backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ba
 if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
-from poses import run_exercise_loop  # <-- your generator function
+from poses import run_exercise_loop
 
 def cv_to_pixmap(frame):
     if frame is None:
@@ -47,7 +47,6 @@ class CameraFeedPage(QWidget):
         self.video_label.setMinimumSize(640, 480)
         
         # Top bar with End Session button
-        # Top bar with End Session button
         top_bar = QHBoxLayout()
 
         # Exercise label (start empty)
@@ -62,7 +61,6 @@ class CameraFeedPage(QWidget):
         self.end_button.clicked.connect(self.end_session)
         top_bar.addWidget(self.end_button)
 
-        
         # Next Exercise button
         self.next_button = QPushButton("Next Exercise")
         self.next_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 8px;")
@@ -70,9 +68,9 @@ class CameraFeedPage(QWidget):
 
         # Main layout
         layout = QVBoxLayout()
-        layout.addLayout(top_bar)  # End Session button at top right
+        layout.addLayout(top_bar)
         layout.addWidget(self.video_label)
-        layout.addWidget(self.next_button)  # Next Exercise button at bottom
+        layout.addWidget(self.next_button)
         self.setLayout(layout)
 
         # Load user profile
@@ -82,6 +80,13 @@ class CameraFeedPage(QWidget):
         except:
             self.user_profile = {"level": "beginner", "goal": "strength"}
 
+        # CRITICAL: Initialize seen_exercises as empty list if it doesn't exist
+        # This ensures it starts fresh each session
+        self.user_profile['seen_exercises'] = []
+        self.save_user_profile()
+        
+        print(f"Initial user profile: {self.user_profile}")
+
         # Start first exercise if available
         if self.recommended_exercises:
             self.start_exercise(self.recommended_exercises[self.current_index])
@@ -89,12 +94,24 @@ class CameraFeedPage(QWidget):
             # If no exercises provided, get one from API
             self.get_new_exercise()
 
+    def save_user_profile(self):
+        """Save the updated user profile to file"""
+        try:
+            with open(self.user_profile_file, 'w') as f:
+                json.dump(self.user_profile, f, indent=2)
+            print(f"Saved user profile: {self.user_profile}")
+        except Exception as e:
+            print(f"Error saving user profile: {e}")
+
     def get_new_exercise(self):
         """Get a new exercise recommendation from the API"""
         try:
+            print(f"Getting new exercise. Seen exercises: {self.user_profile.get('seen_exercises', [])}")
             response = requests.post("http://127.0.0.1:5000/recommend_exercise", json=self.user_profile)
             data = response.json()
             exercise_name = data.get("exercise_name", "pushup")
+            
+            print(f"API recommended: {exercise_name}")
             
             # Add to our exercises list
             if not self.recommended_exercises:
@@ -103,12 +120,28 @@ class CameraFeedPage(QWidget):
             self.current_index = len(self.recommended_exercises) - 1
             
             self.start_exercise(exercise_name)
+            return exercise_name
+            
         except Exception as e:
             print("Failed to get recommendation:", e)
-            # Fallback
-            self.recommended_exercises = ["pushup", "squat", "plank"]
-            self.current_index = 0
-            self.start_exercise(self.recommended_exercises[0])
+            # Fallback - use exercises not in seen list
+            all_exercises = ["pushup", "squat", "plank", "lunges", "crunches"]
+            unseen_exercises = [ex for ex in all_exercises if ex not in self.user_profile.get('seen_exercises', [])]
+            
+            if unseen_exercises:
+                exercise_name = unseen_exercises[0]
+            else:
+                exercise_name = "pushup"  # Fallback if all exercises have been seen
+                
+            print(f"Using fallback exercise: {exercise_name}")
+                
+            if not self.recommended_exercises:
+                self.recommended_exercises = []
+            self.recommended_exercises.append(exercise_name)
+            self.current_index = len(self.recommended_exercises) - 1
+            
+            self.start_exercise(exercise_name)
+            return exercise_name
 
     def start_exercise(self, exercise_name):
         # Clean up previous exercise
@@ -121,19 +154,24 @@ class CameraFeedPage(QWidget):
                 pass
 
         print(f"Starting: {exercise_name}")
-        self.exercise_label.setText(f"Exercise: {exercise_name}")  # <-- Update label
+        self.exercise_label.setText(f"Exercise: {exercise_name}")
+        
+        # Add to seen exercises ONLY when actually starting the exercise
+        if exercise_name not in self.user_profile['seen_exercises']:
+            self.user_profile['seen_exercises'].append(exercise_name)
+            self.save_user_profile()
+            print(f"Added {exercise_name} to seen_exercises")
+        
         self.exercise_gen = run_exercise_loop(exercise_name, self.user_profile)
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
-
 
     def update_frame(self):
         try:
             if self.exercise_gen and self.session_active:
                 frame, feedback = next(self.exercise_gen)
                 self.video_label.setPixmap(cv_to_pixmap(frame))
-                # Feedback will be handled by TTS only
         except StopIteration:
             self.timer.stop()
             print("Exercise complete! Press 'Next Exercise' to continue.")
@@ -144,7 +182,8 @@ class CameraFeedPage(QWidget):
             
         self.current_index += 1
         if self.current_index < len(self.recommended_exercises):
-            self.start_exercise(self.recommended_exercises[self.current_index])
+            next_exercise = self.recommended_exercises[self.current_index]
+            self.start_exercise(next_exercise)
         else:
             # Get a new exercise from API
             self.get_new_exercise()
@@ -167,3 +206,4 @@ class CameraFeedPage(QWidget):
         self.next_button.setEnabled(False)
         self.end_button.setEnabled(False)
         print("Session ended by user.")
+        print(f"Final seen_exercises: {self.user_profile.get('seen_exercises', [])}")

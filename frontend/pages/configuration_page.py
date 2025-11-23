@@ -1062,8 +1062,12 @@ class ConfigurationPage(QWidget):
                     backup = data['backup_exercise']
                     msg += f"\nBackup: {backup.get('exercise_name', 'N/A')} - {backup.get('reason', '')}"
                 QMessageBox.information(self, "Exercise Recommendation", msg)
+                if 'seen_exercises' in self.user_data:
+                    del self.user_data['seen_exercises']
+            # Then save the profile without seen_exercises
+                self.save_to_json()
 
-                # ✅ Switch to CameraFeedPage
+                # ✅ Switch to CameraFeedPage - DON'T add to seen list here
                 parent = self.parent()  # assuming parent is QStackedWidget
                 if parent:
                     camera_page = CameraFeedPage(
@@ -1075,8 +1079,10 @@ class ConfigurationPage(QWidget):
 
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to get recommendation:\n{str(e)}")
-
- 
+                
+                
+                
+    
     def previous_step(self):
         if self.current_step > 0:
             self.current_step -= 1
