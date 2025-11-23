@@ -1,6 +1,7 @@
 .venv/
 .env
+venv/
 __pycache__/
 
 # user-generated data
-user_preferences.json
+user_profile.json
