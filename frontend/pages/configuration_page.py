@@ -1,6 +1,7 @@
 import json
+import requests
 import os
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QCheckBox, QGroupBox, QScrollArea, QSlider, QSpinBox, QProgressBar,QGridLayout,QFrame,QTextEdit)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QCheckBox, QGroupBox, QScrollArea, QSlider, QSpinBox, QProgressBar,QGridLayout,QFrame,QTextEdit,QMessageBox)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QColor, QPalette
 
@@ -1041,8 +1042,39 @@ class ConfigurationPage(QWidget):
             print("Profile saved to:", self.config_file)
             print("User data:", self.user_data)
             
+            # Send POST request to backend
+            try:
+                response = requests.post(
+                    "http://127.0.0.1:5000/recommend_exercise",  # Replace with your Flask endpoint
+                    json = self.user_data
+                )
+                data = response.json()
+
+                print("WE ARE LOOKING AT THE DATA: ",data)
+
+                exercise_name = data.get("exercise_name", "N/A")
+                tip = data.get("tip", "N/A")
+
+                print(f"Recommended Exercise: {exercise_name}")
+                print(f"Tip: {tip}")
+
+                
+                # Display recommendation in a popup
+                msg = f"Recommended Exercise: {exercise_name}\nTip: {tip}"
+
+                if "backup_exercise" in data:
+                    backup = data['backup_exercise']
+                    msg += f"\nBackup: {backup.get('exercise_name', 'N/A')} - {backup.get('reason', '')}"
+                
+                QMessageBox.information(self, "Exercise Recommendation", msg)
+
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to get recommendation:\n{str(e)}")
+            
+            # Navigate to home page
             if self.parent():
-                self.parent().setCurrentIndex(2)  # Go back to home page
+                self.parent().setCurrentIndex(2)  # Home page should be at index 0
+            
     
     def previous_step(self):
         if self.current_step > 0:

@@ -1,7 +1,7 @@
 import json
 # Get user's exercise/accessibility preferences to use in the prompt
 
-PREF_FILE = "user_preferences.json"
+PREF_FILE = "user_profile.json"
 
 def save_preferences(prefs: dict):
     """Save user preferences to a JSON file."""

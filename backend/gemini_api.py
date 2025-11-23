@@ -1,6 +1,7 @@
 # Install the following dependencies to run the code: pip install google-genai
 
 import os
+import json
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -33,18 +34,61 @@ def generate():
             ],
         ),
     ]
-    # Use a plain dict for config to avoid invalid Python syntax and keep the example simple
+    
     generate_content_config = {
         # "thinkingConfig": {"thinkingLevel": "LOW"},
     }
+
+    full_response = ""
 
     for chunk in client.models.generate_content_stream(
         model=model,
         contents=contents,
         config=generate_content_config,
     ):
-        # print defensively in case the stream chunk attribute differs
-        print(getattr(chunk, "text", getattr(chunk, "delta", "")), end="")
+        chunk_text = getattr(chunk, "text", getattr(chunk, "delta", ""))
+        print(chunk_text, end="")
+        full_response += chunk_text
+        
+    # --- Convert the response string into a structured dict ---
+    try:
+        # Clean the response - remove markdown code blocks if present
+        cleaned_response = full_response.strip()
+        if cleaned_response.startswith('```json'):
+            cleaned_response = cleaned_response[7:]  # Remove ```json
+        if cleaned_response.endswith('```'):
+            cleaned_response = cleaned_response[:-3]  # Remove ```
+        cleaned_response = cleaned_response.strip()
+        
+        # Parse the JSON
+        response_data = json.loads(cleaned_response)
+        
+        # Extract the specific fields your frontend expects
+        data = {
+            "exercise_name": response_data.get("exercise_name", "Unknown Exercise"),
+            "tip": response_data.get("tip", "No tip available"),
+            "exercise_id": response_data.get("exercise_id", ""),
+            "reason": response_data.get("reason", ""),
+        }
+        
+    except json.JSONDecodeError as e:
+        print(f"JSON parsing error: {e}")
+        print(f"Raw response: {full_response}")
+        # Fallback: wrap raw text in a dict
+        data = {
+            "exercise_name": "Custom Exercise",
+            "tip": full_response,
+            "exercise_id": "",
+            "reason": "AI response could not be parsed",
+            "backup_exercise": {
+                "exercise_name": "Walking",
+                "reason": "Safe fallback option"
+            }
+        }
+
+    return data
 
 if __name__ == "__main__":
-    generate()
+    result = generate()
+    print("\n\nFinal structured data:")
+    print(json.dumps(result, indent=2))
