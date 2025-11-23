@@ -180,11 +180,11 @@ def lunges():
             h, w = frame.shape[:2]
             rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(rgbFrame)
-
             if results.pose_landmarks:
-                keypoints = {}
-                for id, lm in enumerate(results.pose_landmarks.landmark):
-                    keypoints[id] = (int(lm.x * w), int(lm.y * h))
+                keypoints = {
+                    id: (int(lm.x * w), int(lm.y * h), lm.visibility)  # add visibility
+                    for id, lm in enumerate(results.pose_landmarks.landmark)
+                }
 
                 L_HIP = keypoints[mpPose.PoseLandmark.LEFT_HIP.value]
                 L_KNEE = keypoints[mpPose.PoseLandmark.LEFT_KNEE.value]
@@ -194,26 +194,25 @@ def lunges():
                 R_KNEE = keypoints[mpPose.PoseLandmark.RIGHT_KNEE.value]
                 R_ANKLE = keypoints[mpPose.PoseLandmark.RIGHT_ANKLE.value]
 
-                # --- Determine front leg using Z-depth (side view) ---
+                # --- Determine front leg using visibility (proxy for depth) ---
                 left_depth = L_KNEE[2]
                 right_depth = R_KNEE[2]
 
-                if left_depth < right_depth:
-                    # LEFT LEG is front
-                    front_knee_angle = calculateAngles(L_HIP, L_KNEE, L_ANKLE)
-                    knee_x = L_KNEE[0]
-                    ankle_x = L_ANKLE[0]
+                if left_depth > right_depth:  # higher visibility = closer
+                    front_knee = L_KNEE
+                    front_hip = L_HIP
+                    front_ankle = L_ANKLE
                 else:
-                    # RIGHT LEG is front
-                    front_knee_angle = calculateAngles(R_HIP, R_KNEE, R_ANKLE)
-                    knee_x = R_KNEE[0]
-                    ankle_x = R_ANKLE[0]
+                    front_knee = R_KNEE
+                    front_hip = R_HIP
+                    front_ankle = R_ANKLE
 
-                # --- Checks for correct form ---
-                knee_angle_correct = 80 <= front_knee_angle <= 110
-                knee_not_over_toes = knee_x < ankle_x + 20  # simple threshold
+                front_knee_angle = calculateAngles(front_hip[:2], front_knee[:2], front_ankle[:2])
 
-                correct = knee_angle_correct and knee_not_over_toes
+                # Simple check: knee not too far over toes
+                knee_not_over_toes = front_knee[0] < front_ankle[0] + 40
+
+                correct = (70 <= front_knee_angle <= 12) and knee_not_over_toes
 
                 exerciseData = {
                     "exercise": "lunges",
@@ -222,52 +221,92 @@ def lunges():
                     "correct_form": correct
                 }
 
-                yield frame, exerciseData
+                yield frame, exerciseData   
 
-            else:
-                yield frame, {
-                    "exercise": "lunges",
-                    "front_knee_angle": 0,
-                    "knee_not_over_toes": False,
-                    "correct_form": False
-                }
+
 
     cap.release()
 
 
-
-def seatedHamstring():
+def touchToesFront():
     mpPose = mp.solutions.pose
     mpDraw = mp.solutions.drawing_utils
     cap = cv2.VideoCapture(0)
-    with mpPose.Pose(min_detection_confidence=0.5,min_tracking_confidence=0.5) as pose:
+
+    with mpPose.Pose(min_detection_confidence=0.5,
+                     min_tracking_confidence=0.5) as pose:
+
         while True:
             ret, frame = cap.read()
-            if not ret: break
-            h,w = frame.shape[:2]
+            if not ret:
+                break
+
+            h, w = frame.shape[:2]
             rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(rgbFrame)
 
+            exerciseData = {
+                "exercise": "touchToesFront",
+                "hip_angle": 0,
+                "arm_distance": 0,
+                "correct_form": False
+            }
+
             if results.pose_landmarks:
-                keypoints = {id:(int(lm.x*w),int(lm.y*h)) for id,lm in enumerate(results.pose_landmarks.landmark)}
+                keypoints = {
+                    id: (int(lm.x * w), int(lm.y * h), lm.visibility)
+                    for id, lm in enumerate(results.pose_landmarks.landmark)
+                }
+
                 mpDraw.draw_landmarks(frame, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
 
-                # hip-knee angle for stretch
-                L_HIP,L_KNEE,L_ANKLE = keypoints[mpPose.PoseLandmark.LEFT_HIP.value],keypoints[mpPose.PoseLandmark.LEFT_KNEE.value],keypoints[mpPose.PoseLandmark.LEFT_ANKLE.value]
-                R_HIP,R_KNEE,R_ANKLE = keypoints[mpPose.PoseLandmark.RIGHT_HIP.value],keypoints[mpPose.PoseLandmark.RIGHT_KNEE.value],keypoints[mpPose.PoseLandmark.RIGHT_ANKLE.value]
+                # ----------------------------
+                # Required points for front view
+                # ----------------------------
+                required_points = [
+                    mpPose.PoseLandmark.LEFT_SHOULDER,
+                    mpPose.PoseLandmark.RIGHT_SHOULDER,
+                    mpPose.PoseLandmark.LEFT_HIP,
+                    mpPose.PoseLandmark.RIGHT_HIP,
+                    mpPose.PoseLandmark.LEFT_WRIST,
+                    mpPose.PoseLandmark.RIGHT_WRIST,
+                    mpPose.PoseLandmark.LEFT_ANKLE,
+                    mpPose.PoseLandmark.RIGHT_ANKLE
+                ]
+                all_visible = all(keypoints[p.value][2] > 0.5 for p in required_points)
+                if not all_visible:
+                    yield frame, exerciseData
+                    continue
 
-                L_ANGLE = calculateAngles(L_HIP,L_KNEE,L_ANKLE)
-                R_ANGLE = calculateAngles(R_HIP,R_KNEE,R_ANKLE)
-                # we can define correct if torso leans forward (y shoulder < y hip)
-                L_SH,L_H = keypoints[mpPose.PoseLandmark.LEFT_SHOULDER.value],keypoints[mpPose.PoseLandmark.LEFT_HIP.value]
-                R_SH,R_H = keypoints[mpPose.PoseLandmark.RIGHT_SHOULDER.value],keypoints[mpPose.PoseLandmark.RIGHT_HIP.value]
-                torso_forward = (L_SH[1] < L_H[1]) and (R_SH[1] < R_H[1])
-                correct_form = torso_forward
+                # Pick one side for simplicity (left)
+                SH = keypoints[mpPose.PoseLandmark.LEFT_SHOULDER.value][:2]
+                HIP = keypoints[mpPose.PoseLandmark.LEFT_HIP.value][:2]
+                WR = keypoints[mpPose.PoseLandmark.LEFT_WRIST.value][:2]
+                ANK = keypoints[mpPose.PoseLandmark.LEFT_ANKLE.value][:2]
 
-                exerciseData = {"exercise":"seatedHamstring","left_angle":L_ANGLE,"right_angle":R_ANGLE,"correct_form":correct_form}
-                yield frame, exerciseData
-            else:
-                yield frame, {"exercise":"seatedHamstring","left_angle":0,"right_angle":0,"correct_form":False}
+                # ----------------------------
+                # Angles / distances
+                # ----------------------------
+                hip_angle = calculateAngles(SH, HIP, ANK)  # torso vs legs
+                arm_distance = WR[1] - ANK[1]  # wrist vertical distance to ankle
+
+                # ----------------------------
+                # Form check
+                # ----------------------------
+                correct_form = hip_angle < 90 and arm_distance <= 50  # torso bent forward & hands near toes
+
+                exerciseData.update({
+                    "hip_angle": hip_angle,
+                    "arm_distance": arm_distance,
+                    "correct_form": correct_form
+                })
+
+                cv2.putText(frame, f"Good Form: {correct_form}", (20, 90),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                            (0, 255, 0) if correct_form else (0, 0, 255), 2)
+
+            yield frame, exerciseData
+
     cap.release()
 
 
@@ -352,6 +391,187 @@ def plank():
             yield frame, exerciseData
 
     cap.release()
+
+
+
+
+def cobraStretch():
+    mpPose = mp.solutions.pose
+    mpDraw = mp.solutions.drawing_utils
+    cap = cv2.VideoCapture(0)
+
+    with mpPose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            h, w, _ = frame.shape
+            rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(rgbFrame)
+
+            # Default exercise data
+            exerciseData = {
+                "exercise": "cobraStretch",
+                "torso_angle": 0,
+                "elbow_angle": 0,
+                "back_lifted": False,
+                "arms_correct": False,
+                "correct_form": False
+            }
+
+            if results.pose_landmarks:
+                keypoints = {
+                    id: (int(lm.x * w), int(lm.y * h), lm.visibility)
+                    for id, lm in enumerate(results.pose_landmarks.landmark)
+                }
+                mpDraw.draw_landmarks(frame, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
+
+                required_points = [
+                    mpPose.PoseLandmark.LEFT_SHOULDER,
+                    mpPose.PoseLandmark.RIGHT_SHOULDER,
+                    mpPose.PoseLandmark.LEFT_ELBOW,
+                    mpPose.PoseLandmark.RIGHT_ELBOW,
+                    mpPose.PoseLandmark.LEFT_HIP,
+                    mpPose.PoseLandmark.RIGHT_HIP
+                ]
+
+                if all(keypoints[p.value][2] > 0.5 for p in required_points):
+                    # Pick side closer to camera
+                    L_SH = keypoints[mpPose.PoseLandmark.LEFT_SHOULDER.value]
+                    R_SH = keypoints[mpPose.PoseLandmark.RIGHT_SHOULDER.value]
+                    L_HIP = keypoints[mpPose.PoseLandmark.LEFT_HIP.value]
+                    R_HIP = keypoints[mpPose.PoseLandmark.RIGHT_HIP.value]
+
+                    use_left = L_SH[0] < R_SH[0]
+
+                    SH = L_SH if use_left else R_SH
+                    HIP = L_HIP if use_left else R_HIP
+
+                    SH_xy = SH[:2]
+                    HIP_xy = HIP[:2]
+
+                    # Approximate points above and below shoulder for torso angle
+                    torso_angle = calculateAngles(
+                        (HIP_xy[0], HIP_xy[1] + 50), SH_xy, (SH_xy[0], SH_xy[1] - 50)
+                    )
+
+                    # Less strict thresholds
+                    back_lifted = 130 <= torso_angle <= 220  # allow some flexibility
+                    extreme_back = torso_angle < 100 or torso_angle > 250
+
+                    correct_form = back_lifted and not extreme_back
+
+                    exerciseData.update({
+                        "torso_angle": torso_angle,
+                        "back_lifted": back_lifted,
+                        "correct_form": correct_form
+                    })
+
+                    # Draw feedback on frame
+                    cv2.putText(
+                        frame, f"Cobra Form: {correct_form}", (20, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                        (0, 255, 0) if correct_form else (0, 0, 255), 2
+                    )
+
+            # Show the frame in a window
+            cv2.imshow("Cobra Stretch", frame)
+
+            # Yield the data for other uses (e.g., Gemini)
+            yield frame, exerciseData
+
+            # Exit on 'q'
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+def treePose():
+    mpPose = mp.solutions.pose
+    mpDraw = mp.solutions.drawing_utils
+    cap = cv2.VideoCapture(0)
+
+    with mpPose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            h, w, _ = frame.shape
+            rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(rgbFrame)
+
+            exerciseData = {
+                "exercise": "treePose",
+                "support_knee_angle": 0,
+                "foot_height_offset": 0,
+                "correct_form": False
+            }
+
+            if results.pose_landmarks:
+                keypoints = {
+                    id: (int(lm.x*w), int(lm.y*h), lm.visibility)
+                    for id, lm in enumerate(results.pose_landmarks.landmark)
+                }
+                mpDraw.draw_landmarks(frame, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
+
+                required_points = [
+                    mpPose.PoseLandmark.LEFT_HIP,
+                    mpPose.PoseLandmark.RIGHT_HIP,
+                    mpPose.PoseLandmark.LEFT_KNEE,
+                    mpPose.PoseLandmark.RIGHT_KNEE,
+                    mpPose.PoseLandmark.LEFT_ANKLE,
+                    mpPose.PoseLandmark.RIGHT_ANKLE
+                ]
+
+                if all(keypoints[p.value][2] > 0.5 for p in required_points):
+                    # Choose side supporting
+                    left_support = keypoints[mpPose.PoseLandmark.LEFT_ANKLE.value][1] > keypoints[mpPose.PoseLandmark.RIGHT_ANKLE.value][1]
+                    if left_support:
+                        HIP = keypoints[mpPose.PoseLandmark.LEFT_HIP.value]
+                        KNEE = keypoints[mpPose.PoseLandmark.LEFT_KNEE.value]
+                        ANKLE = keypoints[mpPose.PoseLandmark.LEFT_ANKLE.value]
+                        R_HIP = keypoints[mpPose.PoseLandmark.RIGHT_HIP.value]
+                        R_KNEE = keypoints[mpPose.PoseLandmark.RIGHT_KNEE.value]
+                        R_ANKLE = keypoints[mpPose.PoseLandmark.RIGHT_ANKLE.value]
+                    else:
+                        HIP = keypoints[mpPose.PoseLandmark.RIGHT_HIP.value]
+                        KNEE = keypoints[mpPose.PoseLandmark.RIGHT_KNEE.value]
+                        ANKLE = keypoints[mpPose.PoseLandmark.RIGHT_ANKLE.value]
+                        R_HIP = keypoints[mpPose.PoseLandmark.LEFT_HIP.value]
+                        R_KNEE = keypoints[mpPose.PoseLandmark.LEFT_KNEE.value]
+                        R_ANKLE = keypoints[mpPose.PoseLandmark.LEFT_ANKLE.value]
+
+                    # Supporting leg straightness
+                    support_knee_angle = calculateAngles(HIP[:2], KNEE[:2], ANKLE[:2])
+
+                    # Foot height roughly inner thigh/calf
+                    foot_height_offset = R_ANKLE[1] - KNEE[1]  # positive if foot higher than knee
+
+                    correct = (140 <= support_knee_angle <= 180) and (0 <= foot_height_offset <= 120)  # relaxed thresholds
+
+                    exerciseData.update({
+                        "support_knee_angle": support_knee_angle,
+                        "foot_height_offset": foot_height_offset,
+                        "correct_form": correct
+                    })
+
+                    cv2.putText(frame, f"Tree Pose: {correct}", (20, 90),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                                (0, 255, 0) if correct else (0, 0, 255), 2)
+
+            cv2.imshow("Tree Pose", frame)
+            yield frame, exerciseData
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 
 

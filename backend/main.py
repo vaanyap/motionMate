@@ -1,4 +1,4 @@
-from posture import armsUp, squat, lunges, plank, seatedHamstring
+from posture import armsUp, squat, lunges, plank, touchToesFront, cobraStretch, treePose
 from geminiFeedback import generate
 import cv2
 import threading
@@ -88,7 +88,9 @@ exercise_map = {
     "squat": squat,
     "lunge": lunges,
     "plank": plank,
-    "seatedHamstring": seatedHamstring}
+    "touchtoes": touchToesFront,
+    "cobraStretch": cobraStretch,
+    "treePose": treePose}
 
 
 
