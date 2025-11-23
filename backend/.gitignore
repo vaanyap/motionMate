@@ -1,2 +1,7 @@
+.venv/
 .env
-__pycache__
+venv/
+__pycache__/
+
+# user-generated data
+user_profile.json
