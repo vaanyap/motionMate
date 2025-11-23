@@ -466,7 +466,7 @@ def cobraStretch():
                     # )
 
 
-            cv2.imshow("Cobra Stretch", frame)
+            # cv2.imshow("Cobra Stretch", frame)
 
        
             yield frame, exerciseData
@@ -552,7 +552,7 @@ def treePose():
                     #             cv2.FONT_HERSHEY_SIMPLEX, 0.7,
                     #             (0, 255, 0) if correct else (0, 0, 255), 2)
 
-            cv2.imshow("Tree Pose", frame)
+            # cv2.imshow("Tree Pose", frame)
             yield frame, exerciseData
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -567,7 +567,7 @@ def treePose():
 if __name__ == "__main__":
     for frame, data in armsUp():
 
-        cv2.imshow("Arms Up Detection", frame)
+        # cv2.imshow("Arms Up Detection", frame)
 
        #q to quit
         if cv2.waitKey(1) & 0xFF == ord('q'):

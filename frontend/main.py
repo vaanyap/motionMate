@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QTimer, QFileSystemWatcher
 class MotionMimicApp(QStackedWidget):
     def __init__(self):
         super().__init__()
-        print("🚀 Starting MotionMimicApp...")
+        print("🚀 Starting MotionMateApp...")
         
         self.init_ui()
         self.start_simple_watcher()
@@ -58,7 +58,7 @@ class MotionMimicApp(QStackedWidget):
             # Load and apply background image
             self.apply_background(screen_width, screen_height)
             
-            self.setWindowTitle("MotionMimic+ - DEV MODE")
+            self.setWindowTitle("MotionMate")
             print("✅ UI initialized successfully!")
             
         except Exception as e:
@@ -189,7 +189,7 @@ class MotionMimicApp(QStackedWidget):
         event.accept()
 
 if __name__ == "__main__":
-    print("🎬 Starting MotionMimic+ with auto-reload...")
+    print("🎬 Starting MotionMate with auto-reload...")
     app = QApplication([])
     window = MotionMimicApp()
     sys.exit(app.exec_())

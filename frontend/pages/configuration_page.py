@@ -13,6 +13,38 @@ class ConfigurationPage(QWidget):
         self.focus_checks = []
         self.user_data = {}
         self.config_file = "user_profile.json"
+        
+        # Add this to your main application or in the ConfigurationPage __init__
+        self.setStyleSheet("""
+            /* Base combo box */
+            QComboBox {
+                background: #e5e5e5;      /* light background */
+                color: black;             /* <-- text is BLACK */
+                border: 1px solid #555;
+                border-radius: 5px;
+                padding: 5px;
+            }
+
+            /* Arrow */
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 6px solid black;   /* arrow is black */
+            }
+
+            /* Dropdown popup */
+            QComboBox QAbstractItemView {
+                background: #fafafa;    /* light popup bg */
+                color: black;           /* <-- dropdown TEXT is BLACK */
+                border: 1px solid #555;
+                selection-background-color: #3b82f6;
+                selection-color: white; /* selected item is white text */
+            }
+       
+
+        """)
+        
         self.setup_ui()
         self.load_existing_data()
     
@@ -318,19 +350,19 @@ class ConfigurationPage(QWidget):
             "60+ (Elderly)"
         ])
         age_combo.setStyleSheet("""
+            
             QComboBox {
-                background: rgba(255, 255, 255, 0.1);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-                padding: 10px;
-                font-size: 16px;
+                background: #e5e5e5;
+                color: black;
+                border: 1px solid #555;
+                border-radius: 5px;
+                padding: 6px;
             }
             QComboBox QAbstractItemView {
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                selection-background-color: rgba(59, 130, 246, 0.5);
+                background: #fafafa;
+                color: black;
+                selection-background-color: #3b82f6;
+                selection-color: white;
             }
         """)
         
@@ -559,19 +591,20 @@ class ConfigurationPage(QWidget):
         space_combo.addItems(["Small", "Medium", "Large"])
         space_combo.setStyleSheet("""
             QComboBox {
-                background: rgba(255, 255, 255, 0.1);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 8px;
-                padding: 12px;
-                font-size: 16px;
+                background: #e5e5e5;
+                color: black;
+                border: 1px solid #555;
+                border-radius: 5px;
+                padding: 6px;
             }
             QComboBox QAbstractItemView {
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                selection-background-color: rgba(59, 130, 246, 0.5);
+                background: #fafafa;
+                color: black;
+                selection-background-color: #3b82f6;
+                selection-color: white;
             }
+
+
         """)
         
         # Load existing space selection

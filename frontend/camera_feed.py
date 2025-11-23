@@ -2,7 +2,7 @@
 import sys
 import os
 import json
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QApplication
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer, Qt
 import cv2
@@ -189,6 +189,9 @@ class CameraFeedPage(QWidget):
             self.get_new_exercise()
 
     def end_session(self):
+        import sys
+        from PyQt5.QtCore import QTimer
+        
         self.session_active = False
         if self.timer and self.timer.isActive():
             self.timer.stop()
@@ -207,3 +210,7 @@ class CameraFeedPage(QWidget):
         self.end_button.setEnabled(False)
         print("Session ended by user.")
         print(f"Final seen_exercises: {self.user_profile.get('seen_exercises', [])}")
+        
+        # Delay sys.exit by 2 seconds (2000 milliseconds)
+        QTimer.singleShot(2000, lambda: sys.exit(0))
+
