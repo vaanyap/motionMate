@@ -1,0 +1,18 @@
+{
+  "age_range": "60+ (Elderly)",
+  "fitness_level": "Advanced - Athlete",
+  "health_conditions": [
+    "Arthritis",
+    "Parkinson's Disease",
+    "Osteoporosis",
+    "Pregnancy",
+    "Cardiovascular Issue"
+  ],
+  "intensity": 5,
+  "body_parts": [
+    "Neck",
+    "Ankles / Feet"
+  ],
+  "available_space": "Large",
+  "audio_cues": false
+}
