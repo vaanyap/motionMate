@@ -1,4 +1,4 @@
-#MotionMate+
+**MotionMate+**
 
 AI-powered yoga posture analysis and personalized exercise feedback
 
